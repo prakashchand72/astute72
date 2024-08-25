@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://h00dy.me/sitemap.xml
+
+# nothing here nub
