@@ -3,7 +3,7 @@
     <img class="w-full h-auto" src="@/assets/Biography/self.jpeg" />
     <h2 class="font-bold text-2xl py-5">Prakash Chand Thakuri aka ASTUTE</h2>
     <h4 class="text-gray-600 font-medium text-xs" style="padding-bottom: 10px">
-        Security Researcher OSCP+ / CRTP / eJPT / Bug Hunter 
+        Security Researcher / OSCP+ / CRTP / eJPT / Bug Hunter 
     </h4>
     <h4 class="text-gray-600 font-medium text-xs">Senior Security Analyst at Deloitte </h4>
 
