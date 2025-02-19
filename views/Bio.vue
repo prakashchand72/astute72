@@ -10,8 +10,7 @@
     <div class="pt-7">
         <h3 class="underline font-bold text-md pb-1">About Me</h3>
         <p class="font-thin text-sm pb-2.5">
-            Hello, I'm Prakash Chand Thakuri, a cybersecurity professional skilled in Pentesting, Bug Hunting, and Red Teaming. Certified in CRTP and EJPT, I've received recognition from major companies like Nokia, Philips, BlackBerry, Lenovo, TrendMicro and many more. I've also worked with CBI, Gurugram Police and Delhi Police on cybersecurity cases. I've helped secure over 50+ companies and am currently working at Deloitte as Senior Analyst.
-
+            Hello, I'm Prakash Chand Thakuri, a cybersecurity professional skilled in Pentesting, Bug Hunting, and Red Teaming. Certified in OSCP+, CRTP and EJPT, I've received recognition from major companies like Nokia, Philips, BlackBerry, Lenovo, TrendMicro and many more. I've also worked with CBI, Gurugram Police and Delhi Police on cybersecurity cases. I have helped secure more than 50 companies, worked as a triager on YesWeHack, and currently serve as a Senior Cybersecurity Analyst at Deloitte.
         </p>
     </div>
 
