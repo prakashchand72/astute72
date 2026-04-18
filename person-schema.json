@@ -1,18 +1,17 @@
 {
   "@context": "http://schema.org",
   "@type": "Person",
-  "name": ["Kunal Jaglan", "h00dy", "Kunal Jaglan 0day", "hoodietramp"],
+  "name": ["Prakash Chand", "Prakash Chand Thakuri", "ASTUTE"],
   "image": "img/avatar.png",
-  "jobTitle": ["Pentester", "Child Safety Warrior", "Entrepreneur", "Cyber Security"],
-  "description": "Ryan M. Montgomery, also known by his alias 0day, stands as a pillar in organizational development and innovation. With a proven track record of leadership, he serves as a guiding force at Pentester LLC and the Sentinel Foundation. Working closely with his esteemed leadership team, Ryan offers cutting-edge expertise in cybersecurity. His innovative approaches are geared towards safeguarding digital landscapes, thereby ensuring online safety for both adults and children. Dedicated to combating cyber threats, Ryan and his team at Pentester and the Sentinel Foundation work tirelessly to elevate cybersecurity standards and protect vulnerable online spaces.",
-  "url": "https://ryanmontgomery.me",
+  "jobTitle": ["Senior Cyber Security Analyst", "Penetration Tester", "Red Teamer", "Security Researcher"],
+  "description": "Prakash Chand, also known as ASTUTE, is a Senior Cyber Security Analyst specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red team operations, phishing simulation, OSINT, digital forensics, and malware analysis.",
+  "url": "https://astute72.vercel.app",
   "sameAs": [
-    "https://facebook.com/RyanMMontgomery",
-    "https://instagram.com/0day",
-    "https://twitch.tv/0day",
-    "https://linkedin.com/in/rapper",
-    "https://github.com/0dayCTF",
-    "https://tiktok.com/@0dayCTF"
+    "https://astute72.vercel.app",
+    "https://x.com/prakashchand72",
+    "https://medium.com/@prakashchand72",
+    "https://www.linkedin.com/in/prakashchand72/",
+    "https://github.com/prakashchand72"
   ],
-  "birthDate": "1993-07-23"
+  "birthDate": "xxxx-xx-xx"
 }

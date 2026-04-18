@@ -62,10 +62,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <title>Prakash Chand Thakuri - ASTUTE</title>
-  <meta name="author" content="Prakash Chand Thakuri">
+  <title>Prakash Chand - ASTUTE</title>
+  <meta name="author" content="Prakash Chand">
   <meta name="description"
-    content="Prakash Chand Thakuri, also know by his alias ASTUTE, is a seasoned cybersecurity expert who is witnessing the evolution of cybersecurity from its alluring days to the complexities of the modern digital landscape. His love for CTFs and dedication brings a blend of experience, wisdom, and adaptability to his work. Rooted in strong ethical principles and passion for working tirelessly, Kunal proves to be an invaluable asset in any cybersecurity endeavor.">
+    content="Prakash Chand, also known as ASTUTE, is a Senior Cyber Security Analyst specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red teaming, OSINT, digital forensics, and malware analysis.">
   <div id="app">
     <div class="screen" id="screen" @click="deinitWindows">
       <div v-for="window in windows" :key="window.key" :aria-label="window.displayName">
@@ -169,18 +169,17 @@ export default {
     const jsonld = {
       "@context": "http://schema.org",
       "@type": "Person",
-      "name": ["Prakash Chand Thakuri", "ASTUTE", "Prakash Chand", "Prakash Chand Thakuri h00dy"],
+      "name": ["Prakash Chand", "ASTUTE", "Prakash Chand Thakuri"],
       "image": "img/avatar.png",
-      "jobTitle": ["Pentester", "Red Teamer", "Cyber Security"],
-      "description": "Kunal Jaglan, also know by his alias h00dy, is a seasoned cybersecurity expert who is witnessing the evolution of cybersecurity from its alluring days to the complexities of the modern digital landscape. His love for CTFs and dedication brings a blend of experience, wisdom, and adaptability to his work. Rooted in strong ethical principles and passion for working tirelessly, Kunal proves to be an invaluable asset in any cybersecurity endeavor.",
-      "url": "https://prakashchand72.github.io",
+      "jobTitle": ["Senior Cyber Security Analyst", "Penetration Tester", "Red Teamer", "Security Researcher"],
+      "description": "Prakash Chand, also known as ASTUTE, is a Senior Cyber Security Analyst specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red team operations, phishing simulation, OSINT, digital forensics, and malware analysis.",
+      "url": "https://astute72.vercel.app",
       "sameAs": [
-        "https://facebook.com/xxxxxx",
+        "https://astute72.vercel.app",
         "https://twitter.com/prakashchand72",
-        "https://instagram.com/xxxxxxx",
-        "https://youtube.com/@xxxxxxx",
-        "https://twitch.tv/xxxxxxx",
-        "https://linkedin.com/in/prakashchand72",
+        "https://x.com/prakashchand72",
+        "https://medium.com/@prakashchand72",
+        "https://www.linkedin.com/in/prakashchand72/",
         "https://github.com/prakashchand72",
       ],
       "birthDate": "xxxx-xx-xx"

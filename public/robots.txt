@@ -1,6 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://h00dy.me/sitemap.xml
-
-# nothing here nub
+Sitemap: https://astute72.vercel.app/sitemap.xml
