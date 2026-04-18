@@ -23,7 +23,7 @@
           </div>
         </a>
         <a
-          href="https://www.linkedin.com/in/prakashchand72"
+          href="https://www.linkedin.com/in/prakashchand72/"
           target="_blank"
         >
           <div class="bar">
@@ -38,7 +38,7 @@
           </div>
         </a>
         <div class="divider"></div>
-        <a href="/files/Prakash_Chand_Resume.pdf" target="_blank">
+        <a href="/files/Prakash_Chand_Resume.html" target="_blank">
           <div class="bar">
             <img class="social-image" src="@/assets/win95Icons/resume.png" />
             <u>R</u>esume
@@ -74,7 +74,7 @@
     font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
     font-size: 12px;
   }
-  
+
   .topbar {
     height: 30px;
     background-color: #cfcfcf;
@@ -91,7 +91,6 @@
     color: black;
     text-decoration: none;
   }
-  
   @media only screen and (max-width: 600px) {
     .sidebar {
       width: 5px;
@@ -102,33 +101,33 @@
       align-items: flex-end;
     }
   }
-  
+
   .divider {
     width: 100%;
     height: 1px;
     background: rgb(8, 8, 8);
     border-bottom: rgb(0, 0, 0) solid 1px;
   }
-  
+
   .socials {
     flex-grow: 3;
     width: 100%;
   }
-  
+
   .social-image {
     width: 30px;
     height: 30px;
     margin-right: 10px;
     border-radius: 6px;
   }
-  
+
   .bar {
     display: flex;
     flex-direction: row;
     padding: 5px 10px 5px 10px;
     align-items: center;
   }
-  
+
   .bar:hover {
     background: #d9d9d9;
     color: #fc7a00;
@@ -137,4 +136,4 @@
   <script>
   export default {};
   </script>
-  
+
