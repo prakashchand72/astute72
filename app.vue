@@ -5,6 +5,7 @@ import Navbar from './templates/Navbar.vue'
 import AppGrid from './templates/AppGrid.vue'
 import Bio from './views/Bio.vue'
 import Resume from './views/Resume.vue'
+import Notepad from './views/Notepad.vue'
 import ImagePreviewWindow from './templates/ImagePreviewWindow.vue'
 import StartMenu from './templates/StartMenu.vue'
 import {
@@ -22,6 +23,7 @@ const windowComponents = [
 const slotViews = [
   { name: 'bio', comp: Bio },
   { name: 'resume', comp: Resume },
+  { name: 'notepad', comp: Notepad },
 ]
 
 const windowCheck = (windowId) => {
