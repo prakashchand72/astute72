@@ -10,8 +10,16 @@ export default defineEventHandler(async (event) => {
   if (typeof id !== 'string' || !ID_PATTERN.test(id)) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid id' })
   }
-  if (typeof blob !== 'string' || blob.length === 0 || blob.length > MAX_BLOB_BYTES) {
+  if (
+    !blob ||
+    typeof blob !== 'object' ||
+    typeof (blob as any).iv !== 'string' ||
+    typeof (blob as any).ct !== 'string'
+  ) {
     throw createError({ statusCode: 400, statusMessage: 'Invalid blob' })
+  }
+  if (JSON.stringify(blob).length > MAX_BLOB_BYTES) {
+    throw createError({ statusCode: 413, statusMessage: 'Blob too large' })
   }
   const redis = Redis.fromEnv()
   await redis.set(`notepad:${id}`, blob)
