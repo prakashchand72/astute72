@@ -4,16 +4,18 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 const STORAGE_KEY = 'notepad:v1'
 const PBKDF2_ITERATIONS = 250000
 
+const VERIFY_SALT_B64 = '2A0M7fYXMtr/nc3MXekJlw=='
+const VERIFY_IV_B64 = 'KqOTnxpuinS4mlOI'
+const VERIFY_CT_B64 = 'vgM13TEQuLlR0P8mT4kR+HcV2FoigTDO'
+
 const mode = ref('loading')
 const password = ref('')
-const confirmPassword = ref('')
 const error = ref('')
 const content = ref('')
 const status = ref('')
 const passwordRef = ref(null)
 
 let cryptoKey = null
-let saltBytes = null
 
 const hasCrypto = computed(
   () => typeof window !== 'undefined' && window.crypto && window.crypto.subtle
@@ -34,10 +36,9 @@ const fromBase64 = (b64) => {
 }
 
 const deriveKey = async (pw, salt) => {
-  const enc = new TextEncoder()
   const baseKey = await crypto.subtle.importKey(
     'raw',
-    enc.encode(pw),
+    new TextEncoder().encode(pw),
     { name: 'PBKDF2' },
     false,
     ['deriveKey']
@@ -72,46 +73,24 @@ const focusPassword = () => {
   })
 }
 
-const setupPassword = async () => {
-  error.value = ''
-  if (password.value.length < 6) {
-    error.value = 'Password must be at least 6 characters.'
-    return
-  }
-  if (password.value !== confirmPassword.value) {
-    error.value = 'Passwords do not match.'
-    return
-  }
-  try {
-    saltBytes = crypto.getRandomValues(new Uint8Array(16))
-    cryptoKey = await deriveKey(password.value, saltBytes)
-    content.value = ''
-    await saveEncrypted()
-    password.value = ''
-    confirmPassword.value = ''
-    mode.value = 'unlocked'
-    status.value = 'Ready.'
-  } catch (e) {
-    error.value = 'Could not initialize. Your browser may not support Web Crypto.'
-  }
-}
-
 const unlock = async () => {
   error.value = ''
-  const store = readStore()
-  if (!store) {
-    mode.value = 'setup'
-    return
-  }
   try {
-    const salt = fromBase64(store.salt)
-    const iv = fromBase64(store.iv)
-    const ct = fromBase64(store.ct)
-    const key = await deriveKey(password.value, salt)
-    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct)
+    const verifySalt = fromBase64(VERIFY_SALT_B64)
+    const verifyIv = fromBase64(VERIFY_IV_B64)
+    const verifyCt = fromBase64(VERIFY_CT_B64)
+    const key = await deriveKey(password.value, verifySalt)
+    await crypto.subtle.decrypt({ name: 'AES-GCM', iv: verifyIv }, key, verifyCt)
     cryptoKey = key
-    saltBytes = salt
-    content.value = new TextDecoder().decode(plain)
+    const store = readStore()
+    if (store) {
+      const iv = fromBase64(store.iv)
+      const ct = fromBase64(store.ct)
+      const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct)
+      content.value = new TextDecoder().decode(plain)
+    } else {
+      content.value = ''
+    }
     password.value = ''
     mode.value = 'unlocked'
     status.value = 'Unlocked.'
@@ -123,20 +102,17 @@ const unlock = async () => {
 }
 
 const saveEncrypted = async () => {
-  if (!cryptoKey || !saltBytes) return
+  if (!cryptoKey) return
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const ct = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
     cryptoKey,
     new TextEncoder().encode(content.value)
   )
-  const payload = {
-    v: 1,
-    salt: toBase64(saltBytes),
-    iv: toBase64(iv),
-    ct: toBase64(ct),
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload))
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({ v: 1, iv: toBase64(iv), ct: toBase64(ct) })
+  )
 }
 
 const save = async () => {
@@ -154,27 +130,9 @@ const save = async () => {
 
 const lock = () => {
   cryptoKey = null
-  saltBytes = null
   content.value = ''
   status.value = ''
   mode.value = 'locked'
-  focusPassword()
-}
-
-const resetEverything = () => {
-  const ok = window.confirm(
-    'This will permanently delete all encrypted notes and let you set a new password. Continue?'
-  )
-  if (!ok) return
-  localStorage.removeItem(STORAGE_KEY)
-  cryptoKey = null
-  saltBytes = null
-  content.value = ''
-  password.value = ''
-  confirmPassword.value = ''
-  error.value = ''
-  status.value = ''
-  mode.value = 'setup'
   focusPassword()
 }
 
@@ -183,8 +141,7 @@ onMounted(() => {
     mode.value = 'unsupported'
     return
   }
-  const store = readStore()
-  mode.value = store ? 'locked' : 'setup'
+  mode.value = 'locked'
   focusPassword()
 })
 </script>
@@ -200,44 +157,14 @@ onMounted(() => {
     </div>
 
     <form
-      v-else-if="mode === 'setup'"
-      class="notepad-center"
-      @submit.prevent="setupPassword"
-    >
-      <h3 class="notepad-title">Set a password</h3>
-      <p class="notepad-hint">
-        Your notes are encrypted with this password and stored only in this browser.
-        Forgetting it means losing the notes.
-      </p>
-      <label class="notepad-label">Password
-        <input
-          ref="passwordRef"
-          v-model="password"
-          type="password"
-          class="notepad-input"
-          autocomplete="new-password"
-        />
-      </label>
-      <label class="notepad-label">Confirm password
-        <input
-          v-model="confirmPassword"
-          type="password"
-          class="notepad-input"
-          autocomplete="new-password"
-        />
-      </label>
-      <p v-if="error" class="notepad-error">{{ error }}</p>
-      <div class="notepad-row">
-        <button type="submit" class="notepad-btn">Create</button>
-      </div>
-    </form>
-
-    <form
       v-else-if="mode === 'locked'"
       class="notepad-center"
       @submit.prevent="unlock"
     >
       <h3 class="notepad-title">Enter password</h3>
+      <p class="notepad-hint">
+        Notes are encrypted. The password is required to view, edit, or clear them.
+      </p>
       <label class="notepad-label">Password
         <input
           ref="passwordRef"
@@ -250,9 +177,6 @@ onMounted(() => {
       <p v-if="error" class="notepad-error">{{ error }}</p>
       <div class="notepad-row">
         <button type="submit" class="notepad-btn">Unlock</button>
-        <button type="button" class="notepad-btn notepad-btn-ghost" @click="resetEverything">
-          Reset (deletes notes)
-        </button>
       </div>
     </form>
 
@@ -359,10 +283,6 @@ onMounted(() => {
   border-left: 1px solid #808080;
   border-right: 1px solid #ffffff;
   border-bottom: 1px solid #ffffff;
-}
-
-.notepad-btn-ghost {
-  background: transparent;
 }
 
 .notepad-editor {
