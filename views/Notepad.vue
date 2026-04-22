@@ -87,19 +87,15 @@ const fetchStore = async (id) => {
   })
   if (!res.ok) throw new Error(`Fetch failed: ${res.status}`)
   const data = await res.json()
-  if (!data || !data.blob) return null
-  try {
-    return JSON.parse(data.blob)
-  } catch {
-    return null
-  }
+  if (!data || !data.blob || typeof data.blob !== 'object') return null
+  return data.blob
 }
 
 const putStore = async (id, payload) => {
   const res = await fetch('/api/notepad', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, blob: JSON.stringify(payload) }),
+    body: JSON.stringify({ id, blob: payload }),
   })
   if (!res.ok) throw new Error(`Save failed: ${res.status}`)
 }
