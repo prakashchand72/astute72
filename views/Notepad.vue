@@ -1,12 +1,12 @@
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 
-const STORAGE_KEY = 'notepad:v1'
 const PBKDF2_ITERATIONS = 250000
 
 const VERIFY_SALT_B64 = '2A0M7fYXMtr/nc3MXekJlw=='
 const VERIFY_IV_B64 = 'KqOTnxpuinS4mlOI'
 const VERIFY_CT_B64 = 'vgM13TEQuLlR0P8mT4kR+HcV2FoigTDO'
+const SLOT_SALT_B64 = 'mMgaA9SpeHvomwpXKrYfKg=='
 
 const mode = ref('loading')
 const password = ref('')
@@ -16,6 +16,10 @@ const status = ref('')
 const passwordRef = ref(null)
 
 let cryptoKey = null
+let slotId = null
+let autoSaveTimer = null
+let suppressAutoSave = false
+const AUTO_SAVE_DELAY = 600
 
 const hasCrypto = computed(
   () => typeof window !== 'undefined' && window.crypto && window.crypto.subtle
@@ -57,14 +61,47 @@ const deriveKey = async (pw, salt) => {
   )
 }
 
-const readStore = () => {
+const toBase64Url = (buf) =>
+  toBase64(buf).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+
+const deriveSlotId = async (pw) => {
+  const salt = fromBase64(SLOT_SALT_B64)
+  const baseKey = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(pw),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits']
+  )
+  const bits = await crypto.subtle.deriveBits(
+    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    baseKey,
+    128
+  )
+  return toBase64Url(bits)
+}
+
+const fetchStore = async (id) => {
+  const res = await fetch(`/api/notepad?id=${encodeURIComponent(id)}`, {
+    headers: { Accept: 'application/json' },
+  })
+  if (!res.ok) throw new Error(`Fetch failed: ${res.status}`)
+  const data = await res.json()
+  if (!data || !data.blob) return null
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    return JSON.parse(raw)
+    return JSON.parse(data.blob)
   } catch {
     return null
   }
+}
+
+const putStore = async (id, payload) => {
+  const res = await fetch('/api/notepad', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, blob: JSON.stringify(payload) }),
+  })
+  if (!res.ok) throw new Error(`Save failed: ${res.status}`)
 }
 
 const focusPassword = () => {
@@ -81,19 +118,29 @@ const unlock = async () => {
     const verifyCt = fromBase64(VERIFY_CT_B64)
     const key = await deriveKey(password.value, verifySalt)
     await crypto.subtle.decrypt({ name: 'AES-GCM', iv: verifyIv }, key, verifyCt)
+    const id = await deriveSlotId(password.value)
     cryptoKey = key
-    const store = readStore()
-    if (store) {
-      const iv = fromBase64(store.iv)
-      const ct = fromBase64(store.ct)
-      const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct)
-      content.value = new TextDecoder().decode(plain)
-    } else {
+    slotId = id
+    suppressAutoSave = true
+    let loadFailed = false
+    try {
+      const store = await fetchStore(id)
+      if (store) {
+        const iv = fromBase64(store.iv)
+        const ct = fromBase64(store.ct)
+        const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct)
+        content.value = new TextDecoder().decode(plain)
+      } else {
+        content.value = ''
+      }
+    } catch {
+      loadFailed = true
       content.value = ''
     }
     password.value = ''
     mode.value = 'unlocked'
-    status.value = 'Unlocked.'
+    status.value = loadFailed ? 'Could not reach server. Edits will not save.' : 'Unlocked.'
+    nextTick(() => { suppressAutoSave = false })
   } catch {
     error.value = 'Incorrect password.'
     password.value = ''
@@ -102,17 +149,14 @@ const unlock = async () => {
 }
 
 const saveEncrypted = async () => {
-  if (!cryptoKey) return
+  if (!cryptoKey || !slotId) return
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const ct = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
     cryptoKey,
     new TextEncoder().encode(content.value)
   )
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({ v: 1, iv: toBase64(iv), ct: toBase64(ct) })
-  )
+  await putStore(slotId, { v: 1, iv: toBase64(iv), ct: toBase64(ct) })
 }
 
 const save = async () => {
@@ -128,8 +172,35 @@ const save = async () => {
   }
 }
 
-const lock = () => {
+const cancelAutoSave = () => {
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer)
+    autoSaveTimer = null
+  }
+}
+
+const scheduleAutoSave = () => {
+  if (suppressAutoSave) return
+  if (mode.value !== 'unlocked' || !cryptoKey) return
+  cancelAutoSave()
+  status.value = 'Saving…'
+  autoSaveTimer = setTimeout(() => {
+    autoSaveTimer = null
+    save()
+  }, AUTO_SAVE_DELAY)
+}
+
+watch(content, () => {
+  scheduleAutoSave()
+})
+
+const lock = async () => {
+  cancelAutoSave()
+  if (cryptoKey && slotId) {
+    try { await saveEncrypted() } catch {}
+  }
   cryptoKey = null
+  slotId = null
   content.value = ''
   status.value = ''
   mode.value = 'locked'
@@ -143,6 +214,10 @@ onMounted(() => {
   }
   mode.value = 'locked'
   focusPassword()
+})
+
+onBeforeUnmount(() => {
+  cancelAutoSave()
 })
 </script>
 
