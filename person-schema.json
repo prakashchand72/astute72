@@ -1,10 +1,10 @@
 {
   "@context": "http://schema.org",
   "@type": "Person",
-  "name": ["Prakash Chand", "Prakash Chand Thakuri", "ASTUTE"],
+  "name": ["Prakkash Chand", "Prakkash Chand Thakuri", "ASTUTE"],
   "image": "img/avatar.png",
-  "jobTitle": ["Senior Cyber Security Analyst", "Penetration Tester", "Red Teamer", "Security Researcher"],
-  "description": "Prakash Chand, also known as ASTUTE, is a Senior Cyber Security Analyst specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red team operations, phishing simulation, OSINT, digital forensics, and malware analysis.",
+  "jobTitle": ["Consultant", "Penetration Tester", "Red Teamer", "Security Researcher"],
+  "description": "Prakkash Chand, also known as ASTUTE, is a Consultant specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red team operations, phishing simulation, OSINT, digital forensics, and malware analysis.",
   "url": "https://astute72.vercel.app",
   "sameAs": [
     "https://astute72.vercel.app",

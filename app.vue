@@ -64,10 +64,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <title>Prakash Chand - ASTUTE</title>
-  <meta name="author" content="Prakash Chand">
+  <title>Prakkash Chand - ASTUTE</title>
+  <meta name="author" content="Prakkash Chand">
   <meta name="description"
-    content="Prakash Chand, also known as ASTUTE, is a Senior Cyber Security Analyst specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red teaming, OSINT, digital forensics, and malware analysis.">
+    content="Prakkash Chand, also known as ASTUTE, is a Consultant specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red teaming, OSINT, digital forensics, and malware analysis.">
   <div id="app">
     <div class="screen" id="screen" @click="deinitWindows">
       <div v-for="window in windows" :key="window.key" :aria-label="window.displayName">
@@ -171,10 +171,10 @@ export default {
     const jsonld = {
       "@context": "http://schema.org",
       "@type": "Person",
-      "name": ["Prakash Chand", "ASTUTE", "Prakash Chand Thakuri"],
+      "name": ["Prakkash Chand", "ASTUTE", "Prakkash Chand Thakuri"],
       "image": "img/avatar.png",
-      "jobTitle": ["Senior Cyber Security Analyst", "Penetration Tester", "Red Teamer", "Security Researcher"],
-      "description": "Prakash Chand, also known as ASTUTE, is a Senior Cyber Security Analyst specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red team operations, phishing simulation, OSINT, digital forensics, and malware analysis.",
+      "jobTitle": ["Consultant", "Penetration Tester", "Red Teamer", "Security Researcher"],
+      "description": "Prakkash Chand, also known as ASTUTE, is a Consultant specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red team operations, phishing simulation, OSINT, digital forensics, and malware analysis.",
       "url": "https://astute72.vercel.app",
       "sameAs": [
         "https://astute72.vercel.app",
