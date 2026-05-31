@@ -27,9 +27,11 @@ Every "app" on the desktop is a window declared as a data entry in `stores/windo
 `app.vue` reads `windows[]` and renders each entry through a two-level dynamic-component lookup:
 
 1. **Shell** — `windowComponents` array in `app.vue` maps a string (`window` | `ImagePreviewWindow` | `FilesWindow`) to a component in `templates/`. The shell handles the chrome (title bar, drag, resize, min/max/close buttons).
-2. **Content** — `slotViews` array maps a string (`bio` | `resume`) to a component in `views/`. The content is injected into the shell's named `<slot name="content">`.
+2. **Content** — `slotViews` array maps a string (`bio` | `resume` | `notepad`) to a component in `views/`. The content is injected into the shell's named `<slot name="content">`.
 
 **To add a new window**: add a new object to `windows[]` in the store, and — if it uses a new content component — register that component in `slotViews` in `app.vue`. Both name strings must match exactly.
+
+`BiographyWindow` is programmatically opened in `app.vue`'s `onMounted` hook — it's the one window that launches automatically on page load.
 
 ### Drag, resize, fullscreen
 
@@ -57,7 +59,7 @@ The `MS Sans Serif` font is loaded from `assets/fonts/` via `@font-face` in `app
 
 ### SEO / persona content
 
-The page title, meta description, and Person JSON-LD live in `app.vue` (the JSON-LD is in the legacy `<script>` `data()` block alongside the `<script setup>`). The downloadable résumé (`public/files/Prakash_Chand_Resume.{html,pdf}`) and `person-schema.json` are linked from `views/Bio.vue` and must stay in `public/` to be served at their literal paths.
+The page title, meta description, and Person JSON-LD live in `app.vue` (the JSON-LD is in the legacy `<script>` `data()` block alongside the `<script setup>`). The downloadable résumé (`public/files/Prakkash_Chand_Resume.{html,pdf}`) and `person-schema.json` are linked from `views/Bio.vue` and must stay in `public/` to be served at their literal paths.
 
 ### Notepad backend
 

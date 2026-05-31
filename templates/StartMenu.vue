@@ -38,7 +38,7 @@
           </div>
         </a>
         <div class="divider"></div>
-        <a href="/files/Prakash_Chand_Resume.html" target="_blank">
+        <a href="/files/Prakkash_Chand_Resume.html" target="_blank">
           <div class="bar">
             <img class="social-image" src="@/assets/win95Icons/resume.png" />
             <u>R</u>esume
