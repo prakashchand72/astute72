@@ -67,7 +67,7 @@ onMounted(() => {
   <title>Prakkash Chand - ASTUTE</title>
   <meta name="author" content="Prakkash Chand">
   <meta name="description"
-    content="Prakkash Chand, also known as ASTUTE, is a Consultant specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red teaming, OSINT, digital forensics, and malware analysis.">
+    content="Prakkash Chand, also known as ASTUTE, is a Senior Consultant specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red teaming, OSINT, digital forensics, and malware analysis.">
   <div id="app">
     <div class="screen" id="screen" @click="deinitWindows">
       <div v-for="window in windows" :key="window.key" :aria-label="window.displayName">
@@ -173,8 +173,8 @@ export default {
       "@type": "Person",
       "name": ["Prakkash Chand", "ASTUTE", "Prakkash Chand Thakuri"],
       "image": "img/avatar.png",
-      "jobTitle": ["Consultant", "Penetration Tester", "Red Teamer", "Security Researcher"],
-      "description": "Prakkash Chand, also known as ASTUTE, is a Consultant specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red team operations, phishing simulation, OSINT, digital forensics, and malware analysis.",
+      "jobTitle": ["Senior Consultant", "Penetration Tester", "Red Teamer", "Security Researcher"],
+      "description": "Prakkash Chand, also known as ASTUTE, is a Senior Consultant specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red team operations, phishing simulation, OSINT, digital forensics, and malware analysis.",
       "url": "https://astute72.vercel.app",
       "sameAs": [
         "https://astute72.vercel.app",
