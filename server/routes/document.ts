@@ -1,12 +1,8 @@
 import { createHash, timingSafeEqual } from 'node:crypto'
 
-// Public Google Drive folder this endpoint unlocks. Not secret, safe to commit.
-const DRIVE_URL =
-  'REDACTED_DRIVE_URL'
-
-// The password is NEVER in this file. It lives in the Vercel env var
-// DOCUMENT_PASSWORD (set in the Vercel dashboard, not committed to GitHub).
-// If that var is missing the route fails closed and denies access.
+// The target Drive folder and the password are NEVER in this file. Both live
+// in Vercel env vars (DOCUMENT_URL, DOCUMENT_PASSWORD), set in the dashboard,
+// not committed to GitHub. If either is missing the route fails closed.
 const COOKIE = 'doc_auth'
 const MAX_ATTEMPTS = 5
 const LOCKOUT_MS = 60_000
@@ -29,6 +25,12 @@ function sign(value: string): string {
 
 function ipOf(event: any): string {
   return event.node.req.socket?.remoteAddress || 'unknown'
+}
+
+// Resolve the target folder from the env var. Returns null if unset so the
+// route can fail closed rather than redirecting to an empty/unknown target.
+function driveUrl(): string | null {
+  return process.env.DOCUMENT_URL || null
 }
 
 function formHtml(error?: string): string {
@@ -85,7 +87,8 @@ export default defineEventHandler(async (event) => {
   if (method === 'GET') {
     const cookie = getCookie(event, COOKIE)
     if (cookie && safeEqual(cookie, sign('ok'))) {
-      return sendRedirect(event, DRIVE_URL, 302)
+      const url = driveUrl()
+      if (url) return sendRedirect(event, url, 302)
     }
     setResponseHeader(event, 'content-type', 'text/html; charset=utf-8')
     return formHtml()
@@ -103,6 +106,8 @@ export default defineEventHandler(async (event) => {
 
     // Fail closed: no password configured on the server means deny.
     if (expected && safeEqual(pw, expected)) {
+      const url = driveUrl()
+      if (!url) return formHtml('Access is not configured yet.')
       attempts.delete(ip)
       setCookie(event, COOKIE, sign('ok'), {
         httpOnly: true,
@@ -110,7 +115,7 @@ export default defineEventHandler(async (event) => {
         path: '/',
         maxAge: 60 * 60 * 24,
       })
-      return sendRedirect(event, DRIVE_URL, 302)
+      return sendRedirect(event, url, 302)
     }
 
     const cur = attempts.get(ip) ?? { count: 0, until: 0 }
