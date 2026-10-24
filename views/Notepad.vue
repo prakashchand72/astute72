@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { EditorView, basicSetup } from 'codemirror'
 import { EditorState, Compartment } from '@codemirror/state'
 import { oneDark } from '@codemirror/theme-one-dark'
@@ -377,6 +377,15 @@ const clearNote = async () => {
 const toggleView = () => {
   viewMode.value = viewMode.value === 'edit' ? 'preview' : 'edit'
 }
+
+watch(viewMode, (val) => {
+  if (val === 'edit' && mode.value === 'unlocked') {
+    nextTick(() => {
+      const note = activeNote.value
+      createEditor(note ? note.content : '')
+    })
+  }
+})
 
 const lock = async () => {
   cancelAutoSave()
