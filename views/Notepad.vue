@@ -25,6 +25,12 @@ const hasCrypto = computed(
   () => typeof window !== 'undefined' && window.crypto && window.crypto.subtle
 )
 
+const charCount = computed(() => content.value.length)
+const wordCount = computed(() => {
+  const t = content.value.trim()
+  return t ? t.split(/\s+/).length : 0
+})
+
 const toBase64 = (buf) => {
   const bytes = new Uint8Array(buf)
   let s = ''
@@ -190,6 +196,14 @@ watch(content, () => {
   scheduleAutoSave()
 })
 
+const clearNote = async () => {
+  if (!cryptoKey || !slotId) return
+  if (!confirm('Clear this note? This cannot be undone.')) return
+  content.value = ''
+  await save()
+  status.value = 'Note cleared.'
+}
+
 const lock = async () => {
   cancelAutoSave()
   if (cryptoKey && slotId) {
@@ -254,6 +268,7 @@ onBeforeUnmount(() => {
     <div v-else-if="mode === 'unlocked'" class="notepad-editor">
       <div class="notepad-toolbar">
         <button type="button" class="notepad-btn" @click="save">Save</button>
+        <button type="button" class="notepad-btn" @click="clearNote">Clear</button>
         <button type="button" class="notepad-btn" @click="lock">Lock</button>
         <span class="notepad-status">{{ status }}</span>
       </div>
@@ -265,6 +280,11 @@ onBeforeUnmount(() => {
         @keydown.ctrl.s.prevent="save"
         @keydown.meta.s.prevent="save"
       ></textarea>
+      <div class="notepad-statusbar">
+        <span>{{ wordCount }} words</span>
+        <span>{{ charCount }} characters</span>
+        <span class="notepad-enc">Encrypted</span>
+      </div>
     </div>
   </div>
 </template>
@@ -392,5 +412,22 @@ onBeforeUnmount(() => {
   background: #ffffff;
   color: #000;
   box-sizing: border-box;
+}
+
+.notepad-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 3px 8px;
+  background: #c0c0c0;
+  border-top: 1px solid #808080;
+  font-size: 11px;
+  color: #333;
+}
+
+.notepad-enc {
+  margin-left: auto;
+  color: #000080;
+  font-weight: bold;
 }
 </style>

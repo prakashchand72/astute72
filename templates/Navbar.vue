@@ -1,59 +1,47 @@
 <script setup>
-import moment from "moment";
-import {
-    useWindowsStore
-} from '@/stores/windows'
-
-const date = ref("")
-const time = ref("")
+import { ref, onBeforeUnmount } from "vue";
+import { useWindowsStore } from '@/stores/windows'
 
 const windowsStore = useWindowsStore()
 
+const date = ref("")
+const time = ref("")
+let clockTimer = null
+
 const getImagePath = (iconImage) => {
     const path = `../assets/win95Icons/${iconImage}`;
-    const modules =
-        import.meta.glob("../assets/win95Icons/*", {
-            eager: true
-        });
+    const modules = import.meta.glob("../assets/win95Icons/*", { eager: true });
     const mod = modules[path]
-    if (mod == undefined) {
-        return ""
-    } else {
-        return mod.default;
-    }
+    if (mod == undefined) return ""
+    return mod.default;
 };
 
 const openWindow = (windowId) => {
-    const payload = {
-        windowState: "open",
-        windowId: windowId
-    }
+    const payload = { windowState: "open", windowId: windowId }
     windowsStore.setWindowState(payload)
 }
 
-const userIp = ref('');
+const pad = (n) => String(n).padStart(2, "0")
 
-async function fetchUserIp() {
-  try {
-    const response = await fetch('https://api.ipify.org?format=json');
-    const data = await response.json();
-    userIp.value = data.ip;
-  } catch (error) {
-    console.error('Error fetching user IP:', error);
-  }
+const tick = () => {
+    const now = new Date()
+    let h = now.getHours()
+    const ampm = h >= 12 ? "PM" : "AM"
+    h = h % 12 || 12
+    time.value = `${pad(h)}:${pad(now.getMinutes())} ${ampm}`
+    const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    date.value = `${days[now.getDay()]} ${pad(now.getDate())} ${months[now.getMonth()]}`
 }
 
-
 onBeforeMount(() => {
-    setInterval(() => {
-        time.value = moment().format("hh:mm A");
-    }, 1000);
-    setInterval(() => {
-        date.value = moment().format("ddd DD MMMM");
-    }, 1000);
-    fetchUserIp();
+    tick()
+    clockTimer = setInterval(tick, 1000)
 })
 
+onBeforeUnmount(() => {
+    if (clockTimer) clearInterval(clockTimer)
+})
 </script>
 
 <template>
@@ -89,10 +77,10 @@ onBeforeMount(() => {
         </button>
     </div>
     </div>
-    <div class="loic">
-    <p> -- {{ userIp }}</p>
-    </div>
     <div class="spacer"></div>
+    <div class="date" :title="date">
+        {{ date }}
+    </div>
     <div alt="time" class="time">
         <img src="../assets/speakers.png" class="icon-image" />
         <time>
@@ -103,10 +91,6 @@ onBeforeMount(() => {
 </template>
 
 <style scoped>
-/*-------------------------------------------*\
-      Container
-  \*-------------------------------------------*/
-
 @font-face {
   font-family: "Proto-Mono";
   src: url("@/assets/fonts/proto_mono_regular.ttf");
@@ -122,10 +106,6 @@ onBeforeMount(() => {
     flex-direction: row;
     align-items: center;
 }
-
-/*-------------------------------------------*\
-      Navbar Items
-  \*-------------------------------------------*/
 
 .navbar-item {
     width: 100px;
@@ -205,7 +185,6 @@ onBeforeMount(() => {
     border-right: solid rgb(90, 90, 90) 1.5px;
     background: rgb(192, 192, 192);
     display: flex !important;
-    /* justify-content: space-between; */
     justify-content: center;
     align-items: center;
 }
@@ -246,10 +225,6 @@ onBeforeMount(() => {
     border: black dotted 1px;
 }
 
-/*-------------------------------------------*\
-      Utilities
-  \*-------------------------------------------*/
-
 .icon-image {
     width: 15px;
     height: 15px;
@@ -260,6 +235,13 @@ onBeforeMount(() => {
 
 .spacer {
     flex-grow: 1;
+}
+
+.date {
+    font-size: 0.6em;
+    color: #000;
+    margin-right: 6px;
+    white-space: nowrap;
 }
 
 .time {
@@ -286,6 +268,10 @@ onBeforeMount(() => {
         text-wrap: nowrap;
     }
 
+    .date {
+        display: none;
+    }
+
     .icon-image {
         width: 0px;
         height: 0px;
@@ -303,10 +289,6 @@ onBeforeMount(() => {
     }
 }
 
-/*-------------------------------------------*\
-      CSS Normalisation 
-  \*-------------------------------------------*/
-
 button {
     background: none;
     color: inherit;
@@ -321,11 +303,5 @@ p {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-.loic{
-    color: #000;
-    font-family: 'Proto-Mono', monospace;
-    font-size: 0.7rem;
-    font-weight: bold;
 }
 </style>

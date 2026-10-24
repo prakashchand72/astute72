@@ -123,6 +123,8 @@ let isDragging = false;
 
 onMounted(() => {
     window.value = windowsStore.getWindowById(ComponentName)
+    if (window.value.windowWidth) w.value = window.value.windowWidth
+    if (window.value.windowHeight) h.value = window.value.windowHeight
     const draggableWindow = interact("#" + window.value.windowId)
     draggableWindow
         .draggable({

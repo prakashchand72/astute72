@@ -79,10 +79,12 @@ export const useWindowsStore = defineStore("windows", {
     //   },
       {
         windowId: "NotepadWindow",
-        windowState: "close",
-        displayName: "Notepad",
-        windowComponent: "window",
-        windowContent: "notepad",
+                windowState: "close",
+                displayName: "Notepad",
+                windowComponent: "window",
+                windowContent: "notepad",
+                windowWidth: 640,
+                windowHeight: 480,
         windowContentPadding: {
           top: "0",
           right: "0",
