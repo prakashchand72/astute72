@@ -64,10 +64,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <title>Prakkash Chand - ASTUTE</title>
-  <meta name="author" content="Prakkash Chand">
+  <title>Prakaash Chand - ASTUTE</title>
+  <meta name="author" content="Prakaash Chand">
   <meta name="description"
-    content="Prakkash Chand, also known as ASTUTE, is a Senior Consultant specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red teaming, OSINT, digital forensics, and malware analysis.">
+    content="Prakaash Chand, also known as ASTUTE, is a Senior Consultant specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red teaming, OSINT, digital forensics, and malware analysis.">
   <div id="app">
     <div class="screen" id="screen" @click="deinitWindows">
       <div v-for="window in windows" :key="window.key" :aria-label="window.displayName">
@@ -171,10 +171,10 @@ export default {
     const jsonld = {
       "@context": "http://schema.org",
       "@type": "Person",
-      "name": ["Prakkash Chand", "ASTUTE", "Prakkash Chand Thakuri"],
+      "name": ["Prakaash Chand", "ASTUTE", "Prakaash Chand Thakuri"],
       "image": "img/avatar.png",
       "jobTitle": ["Senior Consultant", "Penetration Tester", "Red Teamer", "Security Researcher"],
-      "description": "Prakkash Chand, also known as ASTUTE, is a Senior Consultant specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red team operations, phishing simulation, OSINT, digital forensics, and malware analysis.",
+      "description": "Prakaash Chand, also known as ASTUTE, is a Senior Consultant specializing in VAPT, web application penetration testing, infrastructure penetration testing, Active Directory security, red team operations, phishing simulation, OSINT, digital forensics, and malware analysis.",
       "url": "https://astute72.vercel.app",
       "sameAs": [
         "https://astute72.vercel.app",

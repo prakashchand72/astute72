@@ -1,5 +1,14 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { EditorView, basicSetup } from 'codemirror'
+import { EditorState, Compartment } from '@codemirror/state'
+import { oneDark } from '@codemirror/theme-one-dark'
+import { javascript } from '@codemirror/lang-javascript'
+import { python } from '@codemirror/lang-python'
+import { html } from '@codemirror/lang-html'
+import { css } from '@codemirror/lang-css'
+import { json } from '@codemirror/lang-json'
+import { markdown } from '@codemirror/lang-markdown'
 
 const PBKDF2_ITERATIONS = 250000
 
@@ -14,11 +23,26 @@ const error = ref('')
 const content = ref('')
 const status = ref('')
 const passwordRef = ref(null)
+const editorContainer = ref(null)
+const language = ref('Auto')
+
+const languageMap = {
+  Auto: null,
+  JavaScript: javascript(),
+  TypeScript: javascript({ typescript: true }),
+  Python: python(),
+  HTML: html(),
+  CSS: css(),
+  JSON: json(),
+  Markdown: markdown(),
+}
 
 let cryptoKey = null
 let slotId = null
 let autoSaveTimer = null
 let suppressAutoSave = false
+let editorView = null
+let languageCompartment = null
 const AUTO_SAVE_DELAY = 600
 
 const hasCrypto = computed(
@@ -112,6 +136,40 @@ const focusPassword = () => {
   })
 }
 
+const createEditor = (doc) => {
+  if (editorView) {
+    editorView.destroy()
+    editorView = null
+  }
+  languageCompartment = new Compartment()
+  language.value = 'Auto'
+  const state = EditorState.create({
+    doc,
+    extensions: [
+      basicSetup,
+      oneDark,
+      EditorView.lineWrapping,
+      languageCompartment.of(languageMap['Auto'] || []),
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) {
+          content.value = update.state.doc.toString()
+        }
+      }),
+    ],
+  })
+  editorView = new EditorView({ state, parent: editorContainer.value })
+  editorView.focus()
+}
+
+const changeLanguage = (lang) => {
+  language.value = lang
+  if (editorView && languageCompartment) {
+    editorView.dispatch({
+      effects: languageCompartment.reconfigure(languageMap[lang] || []),
+    })
+  }
+}
+
 const unlock = async () => {
   error.value = ''
   try {
@@ -125,23 +183,24 @@ const unlock = async () => {
     slotId = id
     suppressAutoSave = true
     let loadFailed = false
+    let plain = ''
     try {
       const store = await fetchStore(id)
       if (store) {
         const iv = fromBase64(store.iv)
         const ct = fromBase64(store.ct)
-        const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct)
-        content.value = new TextDecoder().decode(plain)
-      } else {
-        content.value = ''
+        const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct)
+        plain = new TextDecoder().decode(decrypted)
       }
     } catch {
       loadFailed = true
-      content.value = ''
     }
+    content.value = plain
     password.value = ''
     mode.value = 'unlocked'
     status.value = loadFailed ? 'Could not reach server. Edits will not save.' : 'Unlocked.'
+    await nextTick()
+    createEditor(plain)
     nextTick(() => { suppressAutoSave = false })
   } catch {
     error.value = 'Incorrect password.'
@@ -192,14 +251,13 @@ const scheduleAutoSave = () => {
   }, AUTO_SAVE_DELAY)
 }
 
-watch(content, () => {
-  scheduleAutoSave()
-})
-
 const clearNote = async () => {
   if (!cryptoKey || !slotId) return
   if (!confirm('Clear this note? This cannot be undone.')) return
   content.value = ''
+  if (editorView) {
+    editorView.dispatch({ changes: { from: 0, to: editorView.state.doc.length, insert: '' } })
+  }
   await save()
   status.value = 'Note cleared.'
 }
@@ -208,6 +266,10 @@ const lock = async () => {
   cancelAutoSave()
   if (cryptoKey && slotId) {
     try { await saveEncrypted() } catch {}
+  }
+  if (editorView) {
+    editorView.destroy()
+    editorView = null
   }
   cryptoKey = null
   slotId = null
@@ -228,6 +290,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   cancelAutoSave()
+  if (editorView) {
+    editorView.destroy()
+    editorView = null
+  }
 })
 </script>
 
@@ -270,16 +336,12 @@ onBeforeUnmount(() => {
         <button type="button" class="notepad-btn" @click="save">Save</button>
         <button type="button" class="notepad-btn" @click="clearNote">Clear</button>
         <button type="button" class="notepad-btn" @click="lock">Lock</button>
+        <select v-model="language" class="notepad-lang" @change="changeLanguage(language)">
+          <option v-for="opt in Object.keys(languageMap)" :key="opt" :value="opt">{{ opt }}</option>
+        </select>
         <span class="notepad-status">{{ status }}</span>
       </div>
-      <textarea
-        v-model="content"
-        class="notepad-textarea"
-        spellcheck="false"
-        placeholder="Start typing…"
-        @keydown.ctrl.s.prevent="save"
-        @keydown.meta.s.prevent="save"
-      ></textarea>
+      <div ref="editorContainer" class="notepad-cm"></div>
       <div class="notepad-statusbar">
         <span>{{ wordCount }} words</span>
         <span>{{ charCount }} characters</span>
@@ -296,7 +358,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   font-family: 'MS Sans Serif', monospace;
-  background: #c0c0c0;
+  background: #1e1e1e;
 }
 
 .notepad-center {
@@ -310,6 +372,7 @@ onBeforeUnmount(() => {
   max-width: 360px;
   margin: 0 auto;
   width: 100%;
+  background: #c0c0c0;
 }
 
 .notepad-title {
@@ -388,30 +451,43 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   padding: 4px 6px;
-  background: #c0c0c0;
-  border-bottom: 1px solid #808080;
+  background: #2d2d2d;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.notepad-lang {
+  font-family: 'MS Sans Serif', monospace;
+  font-size: 12px;
+  padding: 2px 4px;
+  background: #3c3c3c;
+  color: #d4d4d4;
+  border: 1px solid #555;
+  outline: none;
+  cursor: pointer;
 }
 
 .notepad-status {
   font-size: 12px;
-  color: #333;
+  color: #9cdcfe;
   margin-left: auto;
   padding-right: 4px;
 }
 
-.notepad-textarea {
+.notepad-cm {
   flex: 1;
-  width: 100%;
-  resize: none;
-  border: none;
-  outline: none;
-  padding: 8px;
-  font-family: 'MS Sans Serif', monospace;
+  min-height: 0;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+.notepad-cm :deep(.cm-editor) {
+  height: 100%;
   font-size: 13px;
-  line-height: 1.45;
-  background: #ffffff;
-  color: #000;
-  box-sizing: border-box;
+}
+
+.notepad-cm :deep(.cm-scroller) {
+  font-family: 'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
+  line-height: 1.5;
 }
 
 .notepad-statusbar {
@@ -419,15 +495,15 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 12px;
   padding: 3px 8px;
-  background: #c0c0c0;
-  border-top: 1px solid #808080;
+  background: #2d2d2d;
+  border-top: 1px solid #1a1a1a;
   font-size: 11px;
-  color: #333;
+  color: #9d9d9d;
 }
 
 .notepad-enc {
   margin-left: auto;
-  color: #000080;
+  color: #4ec9b0;
   font-weight: bold;
 }
 </style>

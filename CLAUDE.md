@@ -59,7 +59,7 @@ The `MS Sans Serif` font is loaded from `assets/fonts/` via `@font-face` in `app
 
 ### SEO / persona content
 
-The page title, meta description, and Person JSON-LD live in `app.vue` (the JSON-LD is in the legacy `<script>` `data()` block alongside the `<script setup>`). The downloadable résumé (`public/files/Prakkash_Chand_Resume.{html,pdf}`) and `person-schema.json` are linked from `views/Bio.vue` and must stay in `public/` to be served at their literal paths.
+The page title, meta description, and Person JSON-LD live in `app.vue` (the JSON-LD is in the legacy `<script>` `data()` block alongside the `<script setup>`). The downloadable résumé (`public/files/Prakaash_Chand_Resume.{html,pdf}`) and `person-schema.json` are linked from `views/Bio.vue` and must stay in `public/` to be served at their literal paths.
 
 ### Notepad backend
 

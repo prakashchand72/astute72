@@ -2,9 +2,9 @@
   <div class="bio-scroll">
     <!-- Profile header -->
     <div class="bio-header">
-      <img class="bio-avatar" src="@/assets/Biography/self.jpeg" alt="Prakkash Chand" />
+      <img class="bio-avatar" src="@/assets/Biography/self.jpeg" alt="Prakaash Chand" />
       <div class="bio-heading">
-        <h2 class="bio-name">Prakkash Chand <span class="aka">aka ASTUTE</span></h2>
+        <h2 class="bio-name">Prakaash Chand <span class="aka">aka ASTUTE</span></h2>
         <p class="bio-role">Senior Consultant · Offensive Security</p>
         <p class="bio-certs">OSCP+ · CRTP · CRTA · eJPT · CAP · CLLMSE · CLLMSP</p>
         <p class="bio-company">Senior Consultant at Deloitte</p>
@@ -100,8 +100,8 @@
     <section class="bio-section">
       <h3 class="bio-title">Resume</h3>
       <div class="resume-links">
-        <a class="resume-link" href="/files/Prakkash_Chand_Resume.html" target="_blank">View ATS résumé</a>
-        <a class="resume-link" href="/files/Prakkash_Chand_Resume.pdf" download>Download PDF</a>
+        <a class="resume-link" href="/files/Prakaash_Chand_Resume.html" target="_blank">View ATS résumé</a>
+        <a class="resume-link" href="/files/Prakaash_Chand_Resume.pdf" download>Download PDF</a>
       </div>
     </section>
   </div>
