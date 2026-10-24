@@ -5,32 +5,68 @@ const data = ref(null)
 const loading = ref(true)
 const error = ref('')
 
-const mapUrl = computed(() => {
-  if (!data.value || data.value.latitude == null) return ''
-  return `https://www.google.com/maps?q=${data.value.latitude},${data.value.longitude}`
-})
+const detectBrowser = () => {
+  const ua = navigator.userAgent
+  if (/Edg\//.test(ua)) return 'Microsoft Edge'
+  if (/OPR\/|Opera/.test(ua)) return 'Opera'
+  if (/Chrome\//.test(ua)) return 'Chrome'
+  if (/Firefox\//.test(ua)) return 'Firefox'
+  if (/Safari\//.test(ua)) return 'Safari'
+  return 'Unknown'
+}
+
+const detectOS = () => {
+  const ua = navigator.userAgent
+  if (/Windows/.test(ua)) return 'Windows'
+  if (/Mac OS X/.test(ua)) return 'macOS'
+  if (/Android/.test(ua)) return 'Android'
+  if (/iPhone|iPad|iPod/.test(ua)) return 'iOS'
+  if (/Linux/.test(ua)) return 'Linux'
+  return 'Unknown'
+}
+
+const detectDevice = () => {
+  const ua = navigator.userAgent
+  if (/Mobi|Android|iPhone|iPad|iPod/.test(ua)) {
+    if (/iPad|Tablet/.test(ua)) return 'Tablet'
+    return 'Mobile'
+  }
+  return 'Desktop / Laptop'
+}
+
+const device = computed(() => ({
+  browser: detectBrowser(),
+  os: detectOS(),
+  type: detectDevice(),
+}))
 
 const rows = computed(() => {
-  if (!data.value) return []
-  const d = data.value
   const items = [
-    ['IP Address', d.ip],
-    ['Connection Type', d.type],
-    ['Continent', d.continent],
-    ['Country', d.country],
-    ['Country Code', d.country_code],
-    ['Region', d.region],
-    ['City', d.city],
-    ['Latitude', d.latitude],
-    ['Longitude', d.longitude],
-    ['ISP', d.connection?.isp],
-    ['Organization', d.connection?.org],
-    ['ASN', d.connection?.asn],
-    ['Domain', d.connection?.domain],
-    ['Timezone', d.timezone?.id],
-    ['UTC Offset', d.timezone?.utc],
-    ['Current Time', d.timezone?.current_time],
+    ['Device', device.value.type],
+    ['Browser', device.value.browser],
+    ['Operating System', device.value.os],
   ]
+  if (data.value) {
+    const d = data.value
+    items.push(
+      ['IP Address', d.ip],
+      ['Connection Type', d.type],
+      ['Continent', d.continent],
+      ['Country', d.country],
+      ['Country Code', d.country_code],
+      ['Region', d.region],
+      ['City', d.city],
+      ['Latitude', d.latitude],
+      ['Longitude', d.longitude],
+      ['ISP', d.connection?.isp],
+      ['Organization', d.connection?.org],
+      ['ASN', d.connection?.asn],
+      ['Domain', d.connection?.domain],
+      ['Timezone', d.timezone?.id],
+      ['UTC Offset', d.timezone?.utc],
+      ['Current Time', d.timezone?.current_time],
+    )
+  }
   return items.filter(([, v]) => v != null && v !== '')
 })
 
@@ -60,7 +96,6 @@ onMounted(async () => {
     <div v-else class="visitor-body">
       <div class="visitor-head">
         <h3>Visitor Info</h3>
-        <a v-if="mapUrl" class="visitor-map" :href="mapUrl" target="_blank">Open in Maps</a>
       </div>
       <table class="visitor-table">
         <tbody>
@@ -108,16 +143,6 @@ onMounted(async () => {
   margin: 0;
   font-size: 15px;
   color: #569cd6;
-}
-
-.visitor-map {
-  font-size: 12px;
-  color: #4ec9b0;
-  text-decoration: none;
-}
-
-.visitor-map:hover {
-  text-decoration: underline;
 }
 
 .visitor-table {
