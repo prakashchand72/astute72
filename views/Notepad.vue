@@ -3,12 +3,13 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { EditorView, basicSetup } from 'codemirror'
 import { EditorState, Compartment } from '@codemirror/state'
 import { oneDark } from '@codemirror/theme-one-dark'
+import { markdown } from '@codemirror/lang-markdown'
 import { javascript } from '@codemirror/lang-javascript'
 import { python } from '@codemirror/lang-python'
 import { html } from '@codemirror/lang-html'
 import { css } from '@codemirror/lang-css'
 import { json } from '@codemirror/lang-json'
-import { markdown } from '@codemirror/lang-markdown'
+import { marked } from 'marked'
 
 const PBKDF2_ITERATIONS = 250000
 
@@ -20,21 +21,24 @@ const SLOT_SALT_B64 = 'mMgaA9SpeHvomwpXKrYfKg=='
 const mode = ref('loading')
 const password = ref('')
 const error = ref('')
-const content = ref('')
 const status = ref('')
 const passwordRef = ref(null)
 const editorContainer = ref(null)
-const language = ref('Auto')
+const titleInput = ref(null)
+
+const notes = ref([])
+const activeNoteId = ref(null)
+const viewMode = ref('edit')
+const language = ref('Markdown')
 
 const languageMap = {
-  Auto: null,
+  Markdown: markdown(),
   JavaScript: javascript(),
   TypeScript: javascript({ typescript: true }),
   Python: python(),
   HTML: html(),
   CSS: css(),
   JSON: json(),
-  Markdown: markdown(),
 }
 
 let cryptoKey = null
@@ -43,17 +47,43 @@ let autoSaveTimer = null
 let suppressAutoSave = false
 let editorView = null
 let languageCompartment = null
+let loadingNote = false
 const AUTO_SAVE_DELAY = 600
 
 const hasCrypto = computed(
   () => typeof window !== 'undefined' && window.crypto && window.crypto.subtle
 )
 
-const charCount = computed(() => content.value.length)
+const activeNote = computed(() =>
+  notes.value.find((n) => n.id === activeNoteId.value) || null
+)
+
+const charCount = computed(() => (activeNote.value ? activeNote.value.content.length : 0))
 const wordCount = computed(() => {
-  const t = content.value.trim()
+  const t = activeNote.value ? activeNote.value.content.trim() : ''
   return t ? t.split(/\s+/).length : 0
 })
+
+const renderedHtml = computed(() => {
+  const src = activeNote.value ? activeNote.value.content : ''
+  if (!src) return ''
+  try {
+    return sanitize(marked.parse(src))
+  } catch {
+    return ''
+  }
+})
+
+const sanitize = (html) => {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+    .replace(/<object[\s\S]*?<\/object>/gi, '')
+    .replace(/<embed[\s\S]*?<\/embed>/gi, '')
+    .replace(/\son\w+="[^"]*"/gi, '')
+    .replace(/\son\w+='[^']*'/gi, '')
+    .replace(/javascript:/gi, '')
+}
 
 const toBase64 = (buf) => {
   const bytes = new Uint8Array(buf)
@@ -136,23 +166,32 @@ const focusPassword = () => {
   })
 }
 
+const makeId = () => {
+  if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID()
+  return 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+}
+
 const createEditor = (doc) => {
   if (editorView) {
     editorView.destroy()
     editorView = null
   }
   languageCompartment = new Compartment()
-  language.value = 'Auto'
   const state = EditorState.create({
     doc,
     extensions: [
       basicSetup,
       oneDark,
       EditorView.lineWrapping,
-      languageCompartment.of(languageMap['Auto'] || []),
+      languageCompartment.of(languageMap[language.value] || []),
       EditorView.updateListener.of((update) => {
-        if (update.docChanged) {
-          content.value = update.state.doc.toString()
+        if (update.docChanged && !loadingNote) {
+          const note = activeNote.value
+          if (note) {
+            note.content = update.state.doc.toString()
+            note.updatedAt = Date.now()
+            scheduleAutoSave()
+          }
         }
       }),
     ],
@@ -161,12 +200,74 @@ const createEditor = (doc) => {
   editorView.focus()
 }
 
+const setEditorDoc = (doc) => {
+  if (!editorView) return
+  loadingNote = true
+  editorView.dispatch({ changes: { from: 0, to: editorView.state.doc.length, insert: doc } })
+  loadingNote = false
+}
+
 const changeLanguage = (lang) => {
   language.value = lang
   if (editorView && languageCompartment) {
     editorView.dispatch({
       effects: languageCompartment.reconfigure(languageMap[lang] || []),
     })
+  }
+}
+
+const openNote = (id) => {
+  if (activeNoteId.value === id) return
+  activeNoteId.value = id
+  viewMode.value = 'edit'
+  nextTick(() => {
+    const note = activeNote.value
+    if (note) {
+      setEditorDoc(note.content)
+      if (titleInput.value) titleInput.value.value = note.title
+    }
+  })
+}
+
+const newNote = () => {
+  const note = {
+    id: makeId(),
+    title: 'Untitled',
+    content: '',
+    updatedAt: Date.now(),
+  }
+  notes.value.push(note)
+  activeNoteId.value = note.id
+  viewMode.value = 'edit'
+  nextTick(() => {
+    setEditorDoc('')
+    if (titleInput.value) titleInput.value.value = note.title
+    titleInput.value && titleInput.value.focus()
+  })
+  status.value = 'New note.'
+}
+
+const deleteNote = (id) => {
+  if (!confirm('Delete this note? This cannot be undone.')) return
+  const idx = notes.value.findIndex((n) => n.id === id)
+  if (idx === -1) return
+  notes.value.splice(idx, 1)
+  if (activeNoteId.value === id) {
+    activeNoteId.value = notes.value.length ? notes.value[0].id : null
+    nextTick(() => {
+      const note = activeNote.value
+      setEditorDoc(note ? note.content : '')
+      if (titleInput.value) titleInput.value.value = note ? note.title : ''
+    })
+  }
+  save()
+  status.value = 'Note deleted.'
+}
+
+const onTitleInput = (e) => {
+  if (activeNote.value) {
+    activeNote.value.title = e.target.value
+    scheduleAutoSave()
   }
 }
 
@@ -195,12 +296,23 @@ const unlock = async () => {
     } catch {
       loadFailed = true
     }
-    content.value = plain
+    let parsed = []
+    try {
+      const obj = JSON.parse(plain)
+      if (Array.isArray(obj.notes)) parsed = obj.notes
+      else if (typeof obj === 'string') parsed = [{ id: makeId(), title: 'Note', content: obj, updatedAt: Date.now() }]
+    } catch {
+      if (plain) parsed = [{ id: makeId(), title: 'Note', content: plain, updatedAt: Date.now() }]
+    }
+    notes.value = parsed
+    activeNoteId.value = parsed.length ? parsed[0].id : null
     password.value = ''
     mode.value = 'unlocked'
     status.value = loadFailed ? 'Could not reach server. Edits will not save.' : 'Unlocked.'
     await nextTick()
-    createEditor(plain)
+    const note = activeNote.value
+    createEditor(note ? note.content : '')
+    if (titleInput.value) titleInput.value.value = note ? note.title : ''
     nextTick(() => { suppressAutoSave = false })
   } catch {
     error.value = 'Incorrect password.'
@@ -211,11 +323,12 @@ const unlock = async () => {
 
 const saveEncrypted = async () => {
   if (!cryptoKey || !slotId) return
+  const payload = { v: 2, notes: notes.value }
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const ct = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv },
     cryptoKey,
-    new TextEncoder().encode(content.value)
+    new TextEncoder().encode(JSON.stringify(payload))
   )
   await putStore(slotId, { v: 1, iv: toBase64(iv), ct: toBase64(ct) })
 }
@@ -252,14 +365,17 @@ const scheduleAutoSave = () => {
 }
 
 const clearNote = async () => {
-  if (!cryptoKey || !slotId) return
+  if (!activeNote.value) return
   if (!confirm('Clear this note? This cannot be undone.')) return
-  content.value = ''
-  if (editorView) {
-    editorView.dispatch({ changes: { from: 0, to: editorView.state.doc.length, insert: '' } })
-  }
+  activeNote.value.content = ''
+  activeNote.value.updatedAt = Date.now()
+  setEditorDoc('')
   await save()
   status.value = 'Note cleared.'
+}
+
+const toggleView = () => {
+  viewMode.value = viewMode.value === 'edit' ? 'preview' : 'edit'
 }
 
 const lock = async () => {
@@ -273,7 +389,8 @@ const lock = async () => {
   }
   cryptoKey = null
   slotId = null
-  content.value = ''
+  notes.value = []
+  activeNoteId.value = null
   status.value = ''
   mode.value = 'locked'
   focusPassword()
@@ -314,7 +431,7 @@ onBeforeUnmount(() => {
     >
       <h3 class="notepad-title">Enter password</h3>
       <p class="notepad-hint">
-        Notes are encrypted. The password is required to view, edit, or clear them.
+        Your notes are encrypted. The password is required to view, edit, or clear them.
       </p>
       <label class="notepad-label">Password
         <input
@@ -331,21 +448,56 @@ onBeforeUnmount(() => {
       </div>
     </form>
 
-    <div v-else-if="mode === 'unlocked'" class="notepad-editor">
-      <div class="notepad-toolbar">
-        <button type="button" class="notepad-btn" @click="save">Save</button>
-        <button type="button" class="notepad-btn" @click="clearNote">Clear</button>
-        <button type="button" class="notepad-btn" @click="lock">Lock</button>
-        <select v-model="language" class="notepad-lang" @change="changeLanguage(language)">
-          <option v-for="opt in Object.keys(languageMap)" :key="opt" :value="opt">{{ opt }}</option>
-        </select>
-        <span class="notepad-status">{{ status }}</span>
-      </div>
-      <div ref="editorContainer" class="notepad-cm"></div>
-      <div class="notepad-statusbar">
-        <span>{{ wordCount }} words</span>
-        <span>{{ charCount }} characters</span>
-        <span class="notepad-enc">Encrypted</span>
+    <div v-else-if="mode === 'unlocked'" class="notepad-workspace">
+      <aside class="notepad-sidebar">
+        <button type="button" class="notepad-btn notepad-new" @click="newNote">+ New note</button>
+        <div class="notepad-list">
+          <button
+            v-for="note in notes"
+            :key="note.id"
+            type="button"
+            class="notepad-list-item"
+            :class="{ active: note.id === activeNoteId }"
+            @click="openNote(note.id)"
+          >
+            <span class="notepad-list-title">{{ note.title || 'Untitled' }}</span>
+            <span class="notepad-list-del" title="Delete" @click.stop="deleteNote(note.id)">×</span>
+          </button>
+          <p v-if="!notes.length" class="notepad-empty">No notes yet. Click "+ New note".</p>
+        </div>
+      </aside>
+
+      <div class="notepad-main">
+        <div class="notepad-toolbar">
+          <button type="button" class="notepad-btn" @click="save">Save</button>
+          <button type="button" class="notepad-btn" @click="clearNote">Clear</button>
+          <button type="button" class="notepad-btn" @click="lock">Lock</button>
+          <button type="button" class="notepad-btn" @click="toggleView">
+            {{ viewMode === 'edit' ? 'Preview' : 'Edit' }}
+          </button>
+          <select v-model="language" class="notepad-lang" @change="changeLanguage(language)">
+            <option v-for="opt in Object.keys(languageMap)" :key="opt" :value="opt">{{ opt }}</option>
+          </select>
+          <span class="notepad-status">{{ status }}</span>
+        </div>
+
+        <input
+          ref="titleInput"
+          class="notepad-title-input"
+          :value="activeNote ? activeNote.title : ''"
+          placeholder="Note title…"
+          @input="onTitleInput"
+        />
+
+        <div v-if="viewMode === 'edit'" ref="editorContainer" class="notepad-cm"></div>
+        <div v-else class="notepad-preview" v-html="renderedHtml"></div>
+
+        <div class="notepad-statusbar">
+          <span>{{ notes.length }} note{{ notes.length === 1 ? '' : 's' }}</span>
+          <span>{{ wordCount }} words</span>
+          <span>{{ charCount }} characters</span>
+          <span class="notepad-enc">Encrypted</span>
+        </div>
       </div>
     </div>
   </div>
@@ -422,28 +574,102 @@ onBeforeUnmount(() => {
   font-family: 'MS Sans Serif', monospace;
   font-size: 12px;
   padding: 4px 12px;
-  background: #c0c0c0;
-  color: #000;
-  border-top: 1px solid #ffffff;
-  border-left: 1px solid #ffffff;
-  border-right: 1px solid #808080;
-  border-bottom: 1px solid #808080;
+  background: #3c3c3c;
+  color: #d4d4d4;
+  border: 1px solid #555;
   cursor: pointer;
-  min-width: 72px;
+  min-width: 60px;
+}
+
+.notepad-btn:hover {
+  background: #4a4a4a;
 }
 
 .notepad-btn:active {
-  border-top: 1px solid #808080;
-  border-left: 1px solid #808080;
-  border-right: 1px solid #ffffff;
-  border-bottom: 1px solid #ffffff;
+  background: #2a2a2a;
 }
 
-.notepad-editor {
+.notepad-workspace {
   display: flex;
-  flex-direction: column;
   height: 100%;
   width: 100%;
+}
+
+.notepad-sidebar {
+  width: 180px;
+  flex-shrink: 0;
+  background: #252526;
+  border-right: 1px solid #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  gap: 6px;
+}
+
+.notepad-new {
+  width: 100%;
+}
+
+.notepad-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notepad-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  color: #cccccc;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.notepad-list-item:hover {
+  background: #2a2d2e;
+}
+
+.notepad-list-item.active {
+  background: #094771;
+  color: #ffffff;
+}
+
+.notepad-list-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notepad-list-del {
+  color: #888;
+  font-size: 14px;
+  padding: 0 2px;
+}
+
+.notepad-list-del:hover {
+  color: #ff5555;
+}
+
+.notepad-empty {
+  color: #666;
+  font-size: 12px;
+  padding: 8px;
+}
+
+.notepad-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .notepad-toolbar {
@@ -473,6 +699,18 @@ onBeforeUnmount(() => {
   padding-right: 4px;
 }
 
+.notepad-title-input {
+  font-family: 'MS Sans Serif', monospace;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 6px 10px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  border: none;
+  border-bottom: 1px solid #333;
+  outline: none;
+}
+
 .notepad-cm {
   flex: 1;
   min-height: 0;
@@ -488,6 +726,72 @@ onBeforeUnmount(() => {
 .notepad-cm :deep(.cm-scroller) {
   font-family: 'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
   line-height: 1.5;
+}
+
+.notepad-preview {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 16px;
+  background: #1e1e1e;
+  color: #d4d4d4;
+  font-family: 'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.notepad-preview :deep(h1),
+.notepad-preview :deep(h2),
+.notepad-preview :deep(h3) {
+  color: #569cd6;
+  border-bottom: 1px solid #333;
+  padding-bottom: 4px;
+}
+
+.notepad-preview :deep(a) {
+  color: #4ec9b0;
+}
+
+.notepad-preview :deep(code) {
+  background: #2d2d2d;
+  padding: 1px 4px;
+  border-radius: 3px;
+  color: #ce9178;
+}
+
+.notepad-preview :deep(pre) {
+  background: #2d2d2d;
+  padding: 10px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.notepad-preview :deep(pre code) {
+  background: transparent;
+  padding: 0;
+  color: #d4d4d4;
+}
+
+.notepad-preview :deep(blockquote) {
+  border-left: 3px solid #569cd6;
+  margin: 0;
+  padding-left: 12px;
+  color: #9d9d9d;
+}
+
+.notepad-preview :deep(ul),
+.notepad-preview :deep(ol) {
+  padding-left: 20px;
+}
+
+.notepad-preview :deep(table) {
+  border-collapse: collapse;
+}
+
+.notepad-preview :deep(th),
+.notepad-preview :deep(td) {
+  border: 1px solid #444;
+  padding: 4px 8px;
 }
 
 .notepad-statusbar {
