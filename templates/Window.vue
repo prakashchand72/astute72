@@ -258,6 +258,16 @@ onMounted(() => {
     touch-action: none;
     flex-flow: column;
     display: flex;
+    animation: windowIn 0.18s ease-out;
+}
+
+@keyframes windowIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .fullscreen {
