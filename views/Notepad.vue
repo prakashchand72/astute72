@@ -533,18 +533,20 @@ onBeforeUnmount(() => {
   max-width: 360px;
   margin: 0 auto;
   width: 100%;
-  background: #c0c0c0;
+  background: #1e1e1e;
+  color: #d4d4d4;
 }
 
 .notepad-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
   margin: 0 0 4px 0;
+  color: #569cd6;
 }
 
 .notepad-hint {
   font-size: 12px;
-  color: #333;
+  color: #9d9d9d;
   margin: 0 0 8px 0;
 }
 
@@ -553,22 +555,25 @@ onBeforeUnmount(() => {
   flex-direction: column;
   font-size: 12px;
   gap: 4px;
+  color: #9d9d9d;
 }
 
 .notepad-input {
   font-family: 'MS Sans Serif', monospace;
   font-size: 13px;
-  padding: 4px 6px;
-  border-top: 1px solid #808080;
-  border-left: 1px solid #808080;
-  border-right: 1px solid #ffffff;
-  border-bottom: 1px solid #ffffff;
-  background: #ffffff;
+  padding: 6px 8px;
+  border: 1px solid #555;
+  background: #2d2d2d;
+  color: #d4d4d4;
   outline: none;
 }
 
+.notepad-input:focus {
+  border-color: #569cd6;
+}
+
 .notepad-error {
-  color: #a00000;
+  color: #f48771;
   font-size: 12px;
   margin: 4px 0 0 0;
 }

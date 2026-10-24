@@ -6,6 +6,7 @@ import AppGrid from './templates/AppGrid.vue'
 import Bio from './views/Bio.vue'
 import Resume from './views/Resume.vue'
 import Notepad from './views/Notepad.vue'
+import VisitorInfo from './views/VisitorInfo.vue'
 import ImagePreviewWindow from './templates/ImagePreviewWindow.vue'
 import StartMenu from './templates/StartMenu.vue'
 import {
@@ -24,6 +25,7 @@ const slotViews = [
   { name: 'bio', comp: Bio },
   { name: 'resume', comp: Resume },
   { name: 'notepad', comp: Notepad },
+  { name: 'visitor', comp: VisitorInfo },
 ]
 
 const windowCheck = (windowId) => {
@@ -162,6 +164,31 @@ h6 {
   display: block;
   top: 0 !important;
   right: 0 !important;
+}
+
+/*-------------------------------------------*\
+    Mobile responsiveness
+\*-------------------------------------------*/
+
+@media only screen and (max-width: 700px) {
+  .window {
+    max-width: 100vw !important;
+    max-height: calc(100vh - 35px) !important;
+  }
+
+  .grid-container {
+    width: 100% !important;
+  }
+
+  .icon {
+    width: 25% !important;
+    margin: 0.5rem !important;
+  }
+
+  .icon-image {
+    width: 24px !important;
+    height: 24px !important;
+  }
 }
 </style>
 
